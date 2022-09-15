@@ -1,2 +1,2 @@
 # mqtt-elk
-MQTT to ELK bridge in docker
+MQTT to ELK bridge in docker for IoT
