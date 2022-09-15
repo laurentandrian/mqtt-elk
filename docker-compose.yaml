@@ -2,78 +2,67 @@ version: '3.3'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
-    container_name: elasticsearch-7.9.2
-    restart: always
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.4.1
+    container_name: elasticsearch-8.4.1
     environment:
       - node.name=es
-      - cluster.name=es-es-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g'
       - network.host=0.0.0.0
       - http.port=9200
       - xpack.security.enabled=false
-      - discovery.type=single-node
     ulimits:
-      memlock:
-        soft: -1
-        hard: -1
       nofile:
-        soft: 65536 # maximum number of open files for the Elasticsearch user, set to at least 65536 on modern systems
-        hard: 65536
+         soft: 65536
+         hard: 65536
+    user: elasticsearch
     volumes:
       - ./elasticsearch/data:/usr/share/elasticsearch/data
       - ./elasticsearch/logs:/usr/share/elasticsearch/logs
+    networks:
+      - net
     ports:
-      - 920O:9200
-    network_mode: "host"
+      - "9200:9200"
+      - "9300:9300"
 
   kibana:
     depends_on:
       - elasticsearch
-    image: docker.elastic.co/kibana/kibana:7.9.2
-    container_name: kibana-7.9.2
-    restart: always
-    environment:
-      SERVER_NAME: kibana.docker.local
-      ELASTICSEARCH_HOSTS: '["http://localhost:9200"]'
+    image: docker.elastic.co/kibana/kibana:8.4.1
+    container_name: kibana-8.4.1
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      - net
     ports:
-      - 5601:5601
-    network_mode: "host"
-    
+      - "5601:5601"
+
   filebeat:
     depends_on:
       - elasticsearch
-      - activemq
-    image: docker.elastic.co/beats/filebeat:7.9.2
-    container_name: filebeat-7.9.2
-    restart: always
+      - mosquitto
+    image: docker.elastic.co/beats/filebeat:8.4.1
+    container_name: filebeat-8.4.1
     # Need to override user so we can access the log files, and docker.sock
     user: root
-    network_mode: "host"
     volumes:
-      - filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-    network_mode: "host"
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    networks:
+      - net
     # disable strict permission checks
     command: ["--strict.perms=false"]
 
-  activemq:
-    image: synapticiel/activemq:5.16.0
-    container_name: activemq-5.16.0
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    networks:
+      - net
     ports:
       # mqtt
       - "1883:1883"
-      # amqp
-      - "5672:5672"
-      # ui
-      - "8161:8161"
-      # stomp
-      - "61613:61613"
-      # ws
-      - "61614:61614"
-      # jms/openwire
-      - "61616:61616"
+      - "9001:9001"
     volumes:
-      - ./active-mq/data:/opt/apache-activemq/data
-      - ./active-mq/conf:/opt/apache-activemq/conf
-    network_mode: "host"
+      - ./mosquitto:/mosquitto
+
+networks:
+  net:
