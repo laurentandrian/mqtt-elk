@@ -7,18 +7,15 @@ services:
     environment:
       - node.name=es
       - discovery.type=single-node
-      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g'
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
       - network.host=0.0.0.0
       - http.port=9200
       - xpack.security.enabled=false
-    ulimits:
-      nofile:
-         soft: 65536
-         hard: 65536
+
     user: elasticsearch
     volumes:
-      - ./elasticsearch/data:/usr/share/elasticsearch/data
-      - ./elasticsearch/logs:/usr/share/elasticsearch/logs
+      - /share/Container/elasticsearch/data:/usr/share/elasticsearch/data
+      - /share/Container/elasticsearch/logs:/usr/share/elasticsearch/logs
     networks:
       - net
     ports:
@@ -31,7 +28,7 @@ services:
     image: docker.elastic.co/kibana/kibana:8.4.1
     container_name: kibana-8.4.1
     volumes:
-      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+      - /share/Container/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
     networks:
       - net
     ports:
@@ -46,7 +43,7 @@ services:
     # Need to override user so we can access the log files, and docker.sock
     user: root
     volumes:
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /share/Container/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
     networks:
       - net
     # disable strict permission checks
@@ -62,7 +59,7 @@ services:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ./mosquitto:/mosquitto
+      - /share/Container/mosquitto:/mosquitto
 
 networks:
   net:
